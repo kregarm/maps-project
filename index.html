@@ -1,0 +1,42 @@
+<!DOCTYPE <!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Page Title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="icomoon.css">
+  <link rel="stylesheet" type="text/css" media="screen" href="app.css">
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="sidebar">
+      <div class="options-box">
+        <input id="pac-input" class="controls" type="text">
+        <h1>Locations</h1>
+        <div class="listingsToggle">
+          <input id="show-listings" type="button" value="Show Listings">
+          <input id="hide-listings" type="button" value="Hide Listings">
+        </div>
+        <div id="locations" data-bind="foreach: viewModel.locations">
+          <p class="locations-p">
+            <span class="location-p__title" data-bind="text: title"></span>
+            <span class="location-p__address icon-location" data-bind="text: address"></span>
+            <button data-bind="click: viewModel.showMarker(id)">Show this on map</button>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div id="map"></div>
+    <div id="sidebar-toggle" class="icon-menu"></div>
+  </div>
+  <script src="app.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places,geometry&key=AIzaSyBiM92HeOAzh2lG2Fyre2KtHbxMp35MMoM&v=3&callback=initMap"
+    onerror="showError()">
+    </script>
+</body>
+</html>
