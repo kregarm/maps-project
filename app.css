@@ -67,6 +67,17 @@ span {
 #pac-input{
     width: 100%
 }
+
+#info-box {
+    position: absolute;
+    right: 50%;
+    bottom: 0px;
+    height: 200px;
+    width: 600px;
+    background-color: #fff;
+    display: none;
+    overflow: scroll;
+}
 @media only screen and (max-width: 766px) {
     .sidebar {
         display: none;

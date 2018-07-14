@@ -163,7 +163,10 @@ var controller = {
         for (var i = 0; i < viewModel.markers().length; i++) {
             if (viewModel.markers()[i].id === id) {
                 viewModel.markers()[i].setMap(map);
+                var markerLocation = viewModel.markers()[i].position
+                controller.getCityInfo(markerLocation);
                 bounds.extend(viewModel.markers()[i].position);
+                break;
             }
         }
         map.fitBounds(bounds);
@@ -173,6 +176,51 @@ var controller = {
         for (var i = 0; i < viewModel.markers().length; i++) {
             viewModel.markers()[i].setMap(null);
         }
+    },
+    // Tries to get the information about a location from a Teleport API, based on the latlon info from google
+    getCityInfo: function(markerLocation){
+        //Converts marker location to string, removes the opening and closing brackets
+        //and removes the space between in the "lat, lng" string
+        markerLocation = markerLocation.toString().slice(1, -1).replace(/\s+/, "")
+
+        url = 'https://api.teleport.org/api/locations/'+markerLocation+'/'
+        $.ajax({
+            url: url
+        }).done(function(data){
+
+            //if urban area exists
+            if(data._embedded["location:nearest-urban-areas"][0] != null){
+                //nearest urban area
+                urbanAreaUrl = data._embedded["location:nearest-urban-areas"][0]['_links']["location:nearest-urban-area"]['href'] + 'scores'
+                controller.getLocationScores(urbanAreaUrl)
+
+            // if urban area is missing, but nearst city exists
+            } else if (data._embedded["location:nearest-cities"][0] != null){
+                //else nearest city
+                //console.log(data._embedded["location:nearest-cities"][0]['_links']["location:nearest-city"]['href'])
+            
+            // if there is no data available at all
+            } else {
+                return "no data available for this place"
+            }
+
+        }).fail(function(){
+            showError()
+        })
+
+    },
+    //
+    getLocationScores: function(urbanAreaUrl){
+        $.ajax({
+            url:urbanAreaUrl
+        }).done(function(data){
+            controller.populateInfoBox(data)
+        })
+    },
+    populateInfoBox: function(data){
+        console.log(data)
+        $('#info-box').css('display', 'block')
+        $('#info-box').append(data.summary)
     },
     // This function populates the infowindow when the marker is clicked. We'll only allow
     // one infowindow which will open at the marker that is clicked, and populate based
