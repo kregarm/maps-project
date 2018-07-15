@@ -215,12 +215,28 @@ var controller = {
             url:urbanAreaUrl
         }).done(function(data){
             controller.populateInfoBox(data)
+        }).fail(function(){
+            showError()
         })
     },
     populateInfoBox: function(data){
-        console.log(data)
+
+        $('#info-box__summary').empty()
+        $('#info-box__categories').empty()
+
+        widthOfMap = document.getElementById('map').offsetWidth
+        console.log(widthOfMap)
+
         $('#info-box').css('display', 'block')
-        $('#info-box').append(data.summary)
+        $('#info-box__summary').append(data.summary)
+
+        for(entry in data.categories){
+            percentage = data.categories[entry].score_out_of_10 * 10
+            name = data.categories[entry].name
+            color = data.categories[entry].color
+            $('#info-box__categories').append('<div class="info-box__categories-entry"><p>'+name+'</p><progress max="100" value='+percentage+' id='+entry+'></progress></div>')
+        }
+        
     },
     // This function populates the infowindow when the marker is clicked. We'll only allow
     // one infowindow which will open at the marker that is clicked, and populate based
