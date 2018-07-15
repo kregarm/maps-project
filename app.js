@@ -9,17 +9,17 @@ var viewModel = {
         { title: 'TriBeCa Artsy Bachelor Pad', location: { lat: 40.7195264, lng: -74.0089934 } },
         { title: 'Chinatown Homey Space', location: { lat: 40.7180628, lng: -73.9961237 } }
     ]*/),
-    addLocation: function(location){
+    addLocation: function (location) {
         viewModel.locations.push(location)
     }.bind(this),
-    removeLocation: function(){
+    removeLocation: function () {
         viewModel.locations.removeAll()
     },
     markers: ko.observableArray(),
-    removeMarkers: function(){
+    removeMarkers: function () {
         viewModel.markers.removeAll()
     },
-    showMarker: function(id){
+    showMarker: function (id) {
         controller.showListing(id)
     }
 }
@@ -72,7 +72,7 @@ function initMap() {
                 address: place.formatted_address,
                 id: i
             });
-            
+
             controller.addMarkers()
 
             if (place.geometry.viewport) {
@@ -155,7 +155,7 @@ var controller = {
         }
         map.fitBounds(bounds);
     },
-    showListing: function(id){
+    showListing: function (id) {
         controller.hideListings()
         var bounds = new google.maps.LatLngBounds();
         // Looks to match the marker based on ID
@@ -178,109 +178,145 @@ var controller = {
         }
     },
     // Tries to get the information about a location from a Teleport API, based on the latlon info from google
-    getCityInfo: function(markerLocation){
+    getCityInfo: function (markerLocation) {
         //Converts marker location to string, removes the opening and closing brackets
         //and removes the space between in the "lat, lng" string
         markerLocation = markerLocation.toString().slice(1, -1).replace(/\s+/, "")
 
-        url = 'https://api.teleport.org/api/locations/'+markerLocation+'/'
+        url = 'https://api.teleport.org/api/locations/' + markerLocation + '/'
         $.ajax({
             url: url
-        }).done(function(data){
+        }).done(function (data) {
 
             //if urban area exists
-            if(data._embedded["location:nearest-urban-areas"][0] != null){
+            if (data._embedded["location:nearest-urban-areas"][0] != null) {
                 //nearest urban area
                 urbanAreaUrl = data._embedded["location:nearest-urban-areas"][0]['_links']["location:nearest-urban-area"]['href'] + 'scores'
                 controller.getLocationScores(urbanAreaUrl)
 
-            // if urban area is missing, but nearst city exists
-            } else if (data._embedded["location:nearest-cities"][0] != null){
+                // if urban area is missing, but nearst city exists
+            } else if (data._embedded["location:nearest-cities"][0] != null) {
                 //else nearest city
                 //console.log(data._embedded["location:nearest-cities"][0]['_links']["location:nearest-city"]['href'])
-            
-            // if there is no data available at all
+
+                // if there is no data available at all
             } else {
                 return "no data available for this place"
             }
 
-        }).fail(function(){
+        }).fail(function () {
             showError()
         })
 
     },
     //
-    getLocationScores: function(urbanAreaUrl){
+    getLocationScores: function (urbanAreaUrl) {
         $.ajax({
-            url:urbanAreaUrl
-        }).done(function(data){
+            url: urbanAreaUrl
+        }).done(function (data) {
             controller.populateInfoBox(data)
-        }).fail(function(){
+        }).fail(function () {
             showError()
         })
     },
-    populateInfoBox: function(data){
+    populateInfoBox: function (data) {
 
         $('#info-box__summary').empty()
         $('#info-box__categories').empty()
+        width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
 
-        widthOfMap = document.getElementById('map').offsetWidth
-        console.log(widthOfMap)
+        if (width > 1024) {
+            $('#info-box').css('display', 'block')
+        }
 
-        $('#info-box').css('display', 'block')
+        $('.listingsToggle').append('<input id="show-location-info" type="button" onclick="controller.showLocationInfo()" value="Location info">')
         $('#info-box__summary').append(data.summary)
 
-        for(entry in data.categories){
+        for (entry in data.categories) {
             percentage = data.categories[entry].score_out_of_10 * 10
             name = data.categories[entry].name
             color = data.categories[entry].color
-            $('#info-box__categories').append('<div class="info-box__categories-entry"><p>'+name+'</p><progress max="100" value='+percentage+' id='+entry+'></progress></div>')
+            $('#info-box__categories').append('<div class="info-box__categories-entry"><p>' + name + '</p><progress max="100" value=' + percentage + ' id=' + entry + '></progress></div>')
         }
-        
+
     },
     // This function populates the infowindow when the marker is clicked. We'll only allow
     // one infowindow which will open at the marker that is clicked, and populate based
     // on that markers position.
-    populateInfoWindow: function(marker, infowindow) {
+    populateInfoWindow: function (marker, infowindow) {
         // Check to make sure the infowindow is not already opened on this marker.
         if (infowindow.marker != marker) {
-          // Clear the infowindow content to give the streetview time to load.
-          infowindow.setContent('');
-          infowindow.marker = marker;
-          // Make sure the marker property is cleared if the infowindow is closed.
-          infowindow.addListener('closeclick', function() {
-            infowindow.marker = null;
-          });
-          var streetViewService = new google.maps.StreetViewService();
-          var radius = 50;
-          // In case the status is OK, which means the pano was found, compute the
-          // position of the streetview image, then calculate the heading, then get a
-          // panorama from that and set the options
-          function getStreetView(data, status) {
-            if (status == google.maps.StreetViewStatus.OK) {
-              var nearStreetViewLocation = data.location.latLng;
-              var heading = google.maps.geometry.spherical.computeHeading(
-                nearStreetViewLocation, marker.position);
-                infowindow.setContent('<div>' + marker.title + '</br>' + marker.address + '</div><div id="pano"></div>');
-                var panoramaOptions = {
-                  position: nearStreetViewLocation,
-                  pov: {
-                    heading: heading,
-                    pitch: 30
-                  }
-                };
-              var panorama = new google.maps.StreetViewPanorama(
-                document.getElementById('pano'), panoramaOptions);
-            } else {
-              infowindow.setContent('<div>' + marker.title + '</div>' +
-                '<div>No Street View Found</div>');
+            // Clear the infowindow content to give the streetview time to load.
+            infowindow.setContent('');
+            infowindow.marker = marker;
+            // Make sure the marker property is cleared if the infowindow is closed.
+            infowindow.addListener('closeclick', function () {
+                infowindow.marker = null;
+            });
+            var streetViewService = new google.maps.StreetViewService();
+            var radius = 50;
+            // In case the status is OK, which means the pano was found, compute the
+            // position of the streetview image, then calculate the heading, then get a
+            // panorama from that and set the options
+            function getStreetView(data, status) {
+                if (status == google.maps.StreetViewStatus.OK) {
+                    var nearStreetViewLocation = data.location.latLng;
+                    var heading = google.maps.geometry.spherical.computeHeading(
+                        nearStreetViewLocation, marker.position);
+                    infowindow.setContent('<div>' + marker.title + '</br>' + marker.address + '</div><div id="pano"></div>');
+                    var panoramaOptions = {
+                        position: nearStreetViewLocation,
+                        pov: {
+                            heading: heading,
+                            pitch: 30
+                        }
+                    };
+                    var panorama = new google.maps.StreetViewPanorama(
+                        document.getElementById('pano'), panoramaOptions);
+                } else {
+                    infowindow.setContent('<div>' + marker.title + '</div>' +
+                        '<div>No Street View Found</div>');
+                }
             }
-          }
-          // Use streetview service to get the closest streetview image within
-          // 50 meters of the markers position
-          streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
-          // Open the infowindow on the correct marker.
-          infowindow.open(map, marker);
+            // Use streetview service to get the closest streetview image within
+            // 50 meters of the markers position
+            streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+            // Open the infowindow on the correct marker.
+            infowindow.open(map, marker);
+        }
+    },
+    sidebarToggle: function () {
+        if ($(".sidebar").css("display") === "none") {
+            width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+            if (width < 1024) {
+                if ($('#info-box').css("display") === 'block'){
+                    controller.showLocationInfo()
+                }
+            }
+
+            $(".sidebar").css({ "display": "block" });
+            setToggle();
+        } else {
+
+            $(".sidebar").css({ "display": "none" });
+            setToggle();
+        }
+    },
+    showLocationInfo: function () {
+        if ($('#info-box').css("display") === 'none') {
+
+            width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+
+            if (width < 1024) {
+                controller.sidebarToggle()
+            }
+
+            $('#info-box').css({ "display": "block" })
+
+        } else {
+
+            $('#info-box').css({ "display": "none" })
+
         }
     }
 }
@@ -298,7 +334,7 @@ function setToggle() {
 
 setToggle();
 
-$("#sidebar-toggle").click(() => {
+/*$("#sidebar-toggle").click(() => {
     if ($(".sidebar").css("display") === "none") {
         $(".sidebar").css({ "display": "block" });
         setToggle();
@@ -306,6 +342,7 @@ $("#sidebar-toggle").click(() => {
         $(".sidebar").css({ "display": "none" });
         setToggle();
     }
-});
+});*/
+
 //http-server ~/Documents/udacity/maps-project  127.0.0.1
 

@@ -105,8 +105,10 @@ progress{
         position: absolute;
     }
 
-    #pac-input{
-        height: 50px
+    input{
+        height: 40px;
+        width: 100%;
+        margin-bottom: 5px;
     }
 
     button {
