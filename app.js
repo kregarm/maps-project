@@ -233,6 +233,7 @@ var controller = {
         if ($('#show-location-info').length === 0) {
             $('.listingsToggle').append('<input id="show-location-info" type="button" onclick="controller.showLocationInfo()" value="Location info">')
         }
+        $('#info-box').append('<button onclick="controller.removeInfoBox()">Close</button>')
         $('#info-box__summary').append(data.summary)
 
         for (entry in data.categories) {
@@ -248,6 +249,9 @@ var controller = {
         $('#info-box__categories').empty()
         $('#info-box__summary').append('<p>No information available for this location.</p>')
 
+    },
+    removeInfoBox: function(){
+        $('#info-box').css('display','none')
     },
     // This function populates the infowindow when the marker is clicked. We'll only allow
     // one infowindow which will open at the marker that is clicked, and populate based
