@@ -1,5 +1,7 @@
 var map;
 
+// ViewModel contains all elements that are updating dynamically - the list of places
+// and all of the markers
 var viewModel = {
     locations: ko.observableArray(/*[
         { title: 'Park Ave Penthouse', location: { lat: 40.7713024, lng: -73.9632393 } },
@@ -26,7 +28,42 @@ var viewModel = {
 viewModel.locations.push()
 ko.applyBindings(viewModel, document.getElementById("locations"))
 
+// conatins the two functions that call the Teleport api
+var apiCalls = {
+    // Tries to get the urban area of the location - only the urban area contains any relevant
+    // info to display
+    getCityInfo: function (markerLocation) {
+        //Converts marker location to string, removes the opening and closing brackets
+        //and removes the space between in the "lat, lng" string
+        markerLocation = markerLocation.toString().slice(1, -1).replace(/\s+/, "")
 
+        url = 'https://api.teleport.org/api/locations/' + markerLocation + '/'
+        $.ajax({
+            url: url
+        }).done(function (data) {
+            //if urban area exists
+            if (data._embedded["location:nearest-urban-areas"][0] != null) {
+                //nearest urban area
+                urbanAreaUrl = data._embedded["location:nearest-urban-areas"][0]['_links']["location:nearest-urban-area"]['href'] + 'scores'
+                apiCalls.getLocationScores(urbanAreaUrl)
+            } else {
+                controller.dePopulateInfoBox()
+            }
+        }).fail(function () {
+            showError()
+        })
+    },
+    // Gets the information for the urban area
+    getLocationScores: function (urbanAreaUrl) {
+        $.ajax({
+            url: urbanAreaUrl
+        }).done(function (data) {
+            controller.populateInfoBox(data)
+        }).fail(function () {
+            showError()
+        })
+    },
+}
 
 function initMap() {
     // Constructor creates a new map - only center and zoom are required.
@@ -65,12 +102,14 @@ function initMap() {
                 console.log("Returned place contains no geometry");
                 return;
             }
+
             // Create a marker for each place.
             viewModel.addLocation({
                 title: place.name,
                 location: place.geometry.location,
                 address: place.formatted_address,
-                id: i
+                id: i,
+                types: place.types
             });
 
             controller.addMarkers()
@@ -118,6 +157,7 @@ var controller = {
             var title = viewModel.locations()[i].title;
             var address = viewModel.locations()[i].address;
             var id = viewModel.locations()[i].id;
+            var types = viewModel.locations()[i].types
             // Create a marker per location, and put into markers array.
             var marker = new google.maps.Marker({
                 position: position,
@@ -125,7 +165,8 @@ var controller = {
                 address: address,
                 animation: google.maps.Animation.DROP,
                 icon: defaultIcon,
-                id: id
+                id: id,
+                types: types
             });
             // Push the marker to our array of markers.
             viewModel.markers.push(marker);
@@ -155,16 +196,18 @@ var controller = {
         }
         map.fitBounds(bounds);
     },
+    // Displays only one marker, based on the ID and
+    // calls the getCityInfo api call
     showListing: function (id) {
         controller.hideListings()
         var bounds = new google.maps.LatLngBounds();
         // Looks to match the marker based on ID
-        //Extend the boundaries of the map for the matched marker
+        // Extend the boundaries of the map for the matched marker
         for (var i = 0; i < viewModel.markers().length; i++) {
             if (viewModel.markers()[i].id === id) {
                 viewModel.markers()[i].setMap(map);
                 var markerLocation = viewModel.markers()[i].position
-                controller.getCityInfo(markerLocation);
+                apiCalls.getCityInfo(markerLocation);
                 bounds.extend(viewModel.markers()[i].position);
                 break;
             }
@@ -177,48 +220,6 @@ var controller = {
             viewModel.markers()[i].setMap(null);
         }
     },
-    // Tries to get the information about a location from a Teleport API, based on the latlon info from google
-    getCityInfo: function (markerLocation) {
-        //Converts marker location to string, removes the opening and closing brackets
-        //and removes the space between in the "lat, lng" string
-        markerLocation = markerLocation.toString().slice(1, -1).replace(/\s+/, "")
-
-        url = 'https://api.teleport.org/api/locations/' + markerLocation + '/'
-        $.ajax({
-            url: url
-        }).done(function (data) {
-
-            //if urban area exists
-            if (data._embedded["location:nearest-urban-areas"][0] != null) {
-                //nearest urban area
-                urbanAreaUrl = data._embedded["location:nearest-urban-areas"][0]['_links']["location:nearest-urban-area"]['href'] + 'scores'
-                controller.getLocationScores(urbanAreaUrl)
-
-                // if urban area is missing, but nearst city exists
-            } else if (data._embedded["location:nearest-cities"][0] != null) {
-                //else nearest city
-                //console.log(data._embedded["location:nearest-cities"][0]['_links']["location:nearest-city"]['href'])
-
-                // if there is no data available at all
-            } else {
-                return "no data available for this place"
-            }
-
-        }).fail(function () {
-            showError()
-        })
-
-    },
-    //
-    getLocationScores: function (urbanAreaUrl) {
-        $.ajax({
-            url: urbanAreaUrl
-        }).done(function (data) {
-            controller.populateInfoBox(data)
-        }).fail(function () {
-            showError()
-        })
-    },
     populateInfoBox: function (data) {
 
         $('#info-box__summary').empty()
@@ -229,7 +230,9 @@ var controller = {
             $('#info-box').css('display', 'block')
         }
 
-        $('.listingsToggle').append('<input id="show-location-info" type="button" onclick="controller.showLocationInfo()" value="Location info">')
+        if ($('#show-location-info').length === 0) {
+            $('.listingsToggle').append('<input id="show-location-info" type="button" onclick="controller.showLocationInfo()" value="Location info">')
+        }
         $('#info-box__summary').append(data.summary)
 
         for (entry in data.categories) {
@@ -238,6 +241,12 @@ var controller = {
             color = data.categories[entry].color
             $('#info-box__categories').append('<div class="info-box__categories-entry"><p>' + name + '</p><progress max="100" value=' + percentage + ' id=' + entry + '></progress></div>')
         }
+
+    },
+    dePopulateInfoBox: function () {
+        $('#info-box__summary').empty()
+        $('#info-box__categories').empty()
+        $('#info-box__summary').append('<p>No information available for this location.</p>')
 
     },
     // This function populates the infowindow when the marker is clicked. We'll only allow
@@ -288,18 +297,19 @@ var controller = {
     sidebarToggle: function () {
         if ($(".sidebar").css("display") === "none") {
             width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+
             if (width < 1024) {
-                if ($('#info-box').css("display") === 'block'){
+                if ($('#info-box').css("display") === 'block') {
                     controller.showLocationInfo()
                 }
             }
 
             $(".sidebar").css({ "display": "block" });
-            setToggle();
+            controller.setToggle();
         } else {
 
             $(".sidebar").css({ "display": "none" });
-            setToggle();
+            controller.setToggle();
         }
     },
     showLocationInfo: function () {
@@ -318,31 +328,22 @@ var controller = {
             $('#info-box').css({ "display": "none" })
 
         }
+    },
+    setToggle: function () {
+        if ($(".sidebar").css("display") === "block") {
+            var sidebarWidth = $(".sidebar").width();
+            sidebarWidth = sidebarWidth.toString() + "px";
+            $("#sidebar-toggle").css({ "left": sidebarWidth });
+        } else {
+            $("#sidebar-toggle").css({ "left": "0px" });
+        }
     }
 }
 
-
-function setToggle() {
-    if ($(".sidebar").css("display") === "block") {
-        var sidebarWidth = $(".sidebar").width();
-        sidebarWidth = sidebarWidth.toString() + "px";
-        $("#sidebar-toggle").css({ "left": sidebarWidth });
-    } else {
-        $("#sidebar-toggle").css({ "left": "0px" });
-    }
-}
-
-setToggle();
-
-/*$("#sidebar-toggle").click(() => {
-    if ($(".sidebar").css("display") === "none") {
-        $(".sidebar").css({ "display": "block" });
-        setToggle();
-    } else {
-        $(".sidebar").css({ "display": "none" });
-        setToggle();
-    }
-});*/
-
-//http-server ~/Documents/udacity/maps-project  127.0.0.1
+// set toggle functions make sure the sidebar toggle stands next to the 
+// sidebar, so it's usable even if the user is changing the width of the screen
+controller.setToggle();
+$(window).resize(function () {
+    controller.setToggle()
+})
 
