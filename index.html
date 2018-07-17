@@ -6,11 +6,16 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Page Title</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+
   <link rel="stylesheet" href="icomoon.css">
   <link rel="stylesheet" type="text/css" media="screen" href="app.css">
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
     crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+  <!-- Compiled and minified JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
 </head>
 
 <body>
@@ -18,22 +23,23 @@
     <div class="sidebar">
       <div class="options-box">
         <input id="pac-input" class="controls" type="text">
-        <h1>Locations</h1>
+        <h3>Locations</h3>
         <div class="listingsToggle">
-          <input id="show-listings" type="button" value="Show Listings">
-          <input id="hide-listings" type="button" value="Hide Listings">
+          <button id="show-listings" class="waves-effect waves-light btn">Show Listings</button>
+          <button id="hide-listings" class="waves-effect waves-light btn">Hide Listings</button>
         </div>
         <div id="locations" data-bind="foreach: viewModel.locations">
           <p class="locations-p">
             <span class="location-p__title" data-bind="text: title"></span>
             <span class="location-p__address icon-location" data-bind="text: address"></span>
-            <button data-bind="click: viewModel.showMarker(id)">Show this on map</button>
+            <button data-bind="click: viewModel.showListing(id)" class="waves-effect waves-teal btn-flat">Show this on map</button>
           </p>
         </div>
       </div>
     </div>
     <div id="map"></div>
     <div id="info-box">
+      <button onclick="controller.removeInfoBox()" class="waves-effect waves-light btn">Close</button>
       <div id="info-box__summary"></div>
       <div id="info-box__categories"></div>
     </div>

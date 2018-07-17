@@ -3,30 +3,52 @@ var map;
 // ViewModel contains all elements that are updating dynamically - the list of places
 // and all of the markers
 var viewModel = {
-    locations: ko.observableArray(/*[
-        { title: 'Park Ave Penthouse', location: { lat: 40.7713024, lng: -73.9632393 } },
-        { title: 'Chelsea Loft', location: { lat: 40.7444883, lng: -73.9949465 } },
-        { title: 'Union Square Open Floor Plan', location: { lat: 40.7347062, lng: -73.9895759 } },
-        { title: 'East Village Hip Studio', location: { lat: 40.7281777, lng: -73.984377 } },
-        { title: 'TriBeCa Artsy Bachelor Pad', location: { lat: 40.7195264, lng: -74.0089934 } },
-        { title: 'Chinatown Homey Space', location: { lat: 40.7180628, lng: -73.9961237 } }
-    ]*/),
+    locations: ko.observableArray([
+    {title: 'Park Ave Penthouse', location: { lat: 40.7713024, lng: -73.9632393 }, id: 1, address: 'Park Ave S, New York, NY, USA' },
+    { title: 'Chelsea Loft', location: { lat: 40.7444883, lng: -73.9949465 }, id: 2, address: '239 8th Ave, New York, NY 10011, USA' },
+    { title: 'Union Square Open Floor Plan', location: { lat: 40.7347062, lng: -73.9895759 }, id: 3, address: 'Union Square, New York, NY 10003, USA' },
+    { title: 'East Village Hip Studio', location: { lat: 40.7281777, lng: -73.984377 },id: 4, address: 'East Village, New York, NY, USA' },
+    { title: 'TriBeCa Artsy Bachelor Pad', location: { lat: 40.7195264, lng: -74.0089934 }, id: 5, address: '2 Desbrosses St, New York, NY 10013, USA'} ,
+    { title: 'Chinatown Homey Space', location: { lat: 40.7180628, lng: -73.9961237 }, id: 6, address: 'Chinatown, New York, NY, USA' }
+    ]),
     addLocation: function (location) {
-        viewModel.locations.push(location)
+        viewModel.locations.push(location);
     }.bind(this),
     removeLocation: function () {
-        viewModel.locations.removeAll()
+        viewModel.locations.removeAll();
     },
     markers: ko.observableArray(),
     removeMarkers: function () {
-        viewModel.markers.removeAll()
+        viewModel.markers.removeAll();
     },
-    showMarker: function (id) {
-        controller.showListing(id)
+    // Displays only one marker, based on the ID and
+    // calls the getCityInfo api call
+    showListing: function (id) {
+        //viewModel.hideListings()
+        var bounds = new google.maps.LatLngBounds();
+        // Looks to match the marker based on ID
+        // Extend the boundaries of the map for the matched marker
+        for (var i = 0; i < viewModel.markers().length; i++) {
+            if (viewModel.markers()[i].id === id) {
+                viewModel.markers()[i].setMap(map);
+                var markerLocation = viewModel.markers()[i].position
+                apiCalls.getCityInfo(markerLocation);
+                bounds.extend(viewModel.markers()[i].position);
+                break;
+            }
+        }
+        map.fitBounds(bounds);
+    },
+    // This function will loop through the listings and hide them all.
+    hideListings: function () {
+        for (var i = 0; i < viewModel.markers().length; i++) {
+            viewModel.markers()[i].setMap(null);
+        }
     }
 }
-viewModel.locations.push()
-ko.applyBindings(viewModel, document.getElementById("locations"))
+
+
+
 
 // conatins the two functions that call the Teleport api
 var apiCalls = {
@@ -73,7 +95,10 @@ function initMap() {
         mapTypeControl: false
     });
 
+    ko.applyBindings(viewModel, document.getElementById("locations"));
+
     controller.addMarkers()
+    controller.showListings()
 
     var input = document.getElementById('pac-input');
     var searchBox = new google.maps.places.SearchBox(input);
@@ -93,6 +118,7 @@ function initMap() {
         }
 
         viewModel.removeLocation()
+        viewModel.hideListings()
         viewModel.removeMarkers()
 
         // For each place, get the icon, name and location.
@@ -108,11 +134,11 @@ function initMap() {
                 title: place.name,
                 location: place.geometry.location,
                 address: place.formatted_address,
-                id: i,
-                types: place.types
+                id: i
             });
 
             controller.addMarkers()
+            controller.showListings()
 
             if (place.geometry.viewport) {
                 // Only geocodes have viewport.
@@ -157,7 +183,6 @@ var controller = {
             var title = viewModel.locations()[i].title;
             var address = viewModel.locations()[i].address;
             var id = viewModel.locations()[i].id;
-            var types = viewModel.locations()[i].types
             // Create a marker per location, and put into markers array.
             var marker = new google.maps.Marker({
                 position: position,
@@ -165,8 +190,7 @@ var controller = {
                 address: address,
                 animation: google.maps.Animation.DROP,
                 icon: defaultIcon,
-                id: id,
-                types: types
+                id: id
             });
             // Push the marker to our array of markers.
             viewModel.markers.push(marker);
@@ -184,7 +208,7 @@ var controller = {
             });
         }
         document.getElementById('show-listings').addEventListener('click', controller.showListings);
-        document.getElementById('hide-listings').addEventListener('click', controller.hideListings);
+        document.getElementById('hide-listings').addEventListener('click', viewModel.hideListings);
     },
     // This function will loop through the markers array and display them all.
     showListings: function () {
@@ -195,30 +219,6 @@ var controller = {
             bounds.extend(viewModel.markers()[i].position);
         }
         map.fitBounds(bounds);
-    },
-    // Displays only one marker, based on the ID and
-    // calls the getCityInfo api call
-    showListing: function (id) {
-        controller.hideListings()
-        var bounds = new google.maps.LatLngBounds();
-        // Looks to match the marker based on ID
-        // Extend the boundaries of the map for the matched marker
-        for (var i = 0; i < viewModel.markers().length; i++) {
-            if (viewModel.markers()[i].id === id) {
-                viewModel.markers()[i].setMap(map);
-                var markerLocation = viewModel.markers()[i].position
-                apiCalls.getCityInfo(markerLocation);
-                bounds.extend(viewModel.markers()[i].position);
-                break;
-            }
-        }
-        map.fitBounds(bounds);
-    },
-    // This function will loop through the listings and hide them all.
-    hideListings: function () {
-        for (var i = 0; i < viewModel.markers().length; i++) {
-            viewModel.markers()[i].setMap(null);
-        }
     },
     populateInfoBox: function (data) {
 
@@ -231,16 +231,14 @@ var controller = {
         }
 
         if ($('#show-location-info').length === 0) {
-            $('.listingsToggle').append('<input id="show-location-info" type="button" onclick="controller.showLocationInfo()" value="Location info">')
+            $('.listingsToggle').append('<button id="show-location-info" type="button" class="waves-effect waves-light btn" onclick="controller.showLocationInfo()" >Location info</button>')
         }
-        $('#info-box').append('<button onclick="controller.removeInfoBox()">Close</button>')
         $('#info-box__summary').append(data.summary)
 
         for (entry in data.categories) {
             percentage = data.categories[entry].score_out_of_10 * 10
             name = data.categories[entry].name
-            color = data.categories[entry].color
-            $('#info-box__categories').append('<div class="info-box__categories-entry"><p>' + name + '</p><progress max="100" value=' + percentage + ' id=' + entry + '></progress></div>')
+            $('#info-box__categories').append('<p>'+name+'</p><div class="progress"><div class="determinate" style="width:'+percentage+'"></div></div>')
         }
 
     },
@@ -250,8 +248,8 @@ var controller = {
         $('#info-box__summary').append('<p>No information available for this location.</p>')
 
     },
-    removeInfoBox: function(){
-        $('#info-box').css('display','none')
+    removeInfoBox: function () {
+        $('#info-box').css('display', 'none')
     },
     // This function populates the infowindow when the marker is clicked. We'll only allow
     // one infowindow which will open at the marker that is clicked, and populate based
@@ -350,4 +348,5 @@ controller.setToggle();
 $(window).resize(function () {
     controller.setToggle()
 })
+
 

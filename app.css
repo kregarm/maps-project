@@ -18,7 +18,7 @@
     min-width: 350px;
     max-width: 350px;
     height: 100%;
-    background-color: #e9ebee;
+    background-color: #eceff1;
     overflow: scroll;
     padding: 3px;
 }
@@ -67,8 +67,8 @@ span {
     position: absolute
 }
 
-#pac-input{
-    width: 100%
+.progress{
+    height: 15px;
 }
 
 #info-box {
@@ -76,16 +76,17 @@ span {
     top: 0px;
     right: 0px;
     width: 300px;
-    background-color: #e9ebee;;
+    background-color: #eceff1;;
     display: none;
     height: 100%;
     overflow: scroll;
+    padding: 10px
 }
 
 #info-box__summary{
-    margin: 10px;
     background: #fff;
     border: 1px solid #bbbbbb;
+    margin: 10px 0px;
     padding: 5px
 }
 
@@ -97,10 +98,6 @@ span {
 progress{
     width: 100%;
     background-color: #fff
-}
-
-input {
-    padding: 10px
 }
 
 @media only screen and (max-width: 766px) {
