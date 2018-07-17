@@ -31,7 +31,7 @@ var viewModel = {
         for (var i = 0; i < viewModel.markers().length; i++) {
             if (viewModel.markers()[i].id === id) {
                 viewModel.markers()[i].setMap(map);
-                var markerLocation = viewModel.markers()[i].position
+                var markerLocation = viewModel.markers()[i].position;
                 apiCalls.getCityInfo(markerLocation);
                 bounds.extend(viewModel.markers()[i].position);
                 break;
@@ -59,20 +59,20 @@ var apiCalls = {
         //and removes the space between in the "lat, lng" string
         markerLocation = markerLocation.toString().slice(1, -1).replace(/\s+/, "")
 
-        url = 'https://api.teleport.org/api/locations/' + markerLocation + '/'
+        url = 'https://api.teleport.org/api/locations/' + markerLocation + '/';
         $.ajax({
             url: url
         }).done(function (data) {
             //if urban area exists
             if (data._embedded["location:nearest-urban-areas"][0] != null) {
                 //nearest urban area
-                urbanAreaUrl = data._embedded["location:nearest-urban-areas"][0]['_links']["location:nearest-urban-area"]['href'] + 'scores'
-                apiCalls.getLocationScores(urbanAreaUrl)
+                urbanAreaUrl = data._embedded["location:nearest-urban-areas"][0]['_links']["location:nearest-urban-area"]['href'] + 'scores';
+                apiCalls.getLocationScores(urbanAreaUrl);
             } else {
-                controller.dePopulateInfoBox()
+                controller.dePopulateInfoBox();
             }
         }).fail(function () {
-            showError()
+            showError();
         })
     },
     // Gets the information for the urban area
@@ -82,7 +82,7 @@ var apiCalls = {
         }).done(function (data) {
             controller.populateInfoBox(data)
         }).fail(function () {
-            showError()
+            showError();
         })
     },
 }
@@ -97,8 +97,8 @@ function initMap() {
 
     ko.applyBindings(viewModel, document.getElementById("locations"));
 
-    controller.addMarkers()
-    controller.showListings()
+    controller.addMarkers();
+    controller.showListings();
 
     var input = document.getElementById('pac-input');
     var searchBox = new google.maps.places.SearchBox(input);
@@ -117,9 +117,9 @@ function initMap() {
             return;
         }
 
-        viewModel.removeLocation()
-        viewModel.hideListings()
-        viewModel.removeMarkers()
+        viewModel.removeLocation();
+        viewModel.hideListings();
+        viewModel.removeMarkers();
 
         // For each place, get the icon, name and location.
         var bounds = new google.maps.LatLngBounds();
@@ -137,8 +137,8 @@ function initMap() {
                 id: i
             });
 
-            controller.addMarkers()
-            controller.showListings()
+            controller.addMarkers();
+            controller.showListings();
 
             if (place.geometry.viewport) {
                 // Only geocodes have viewport.
@@ -222,34 +222,34 @@ var controller = {
     },
     populateInfoBox: function (data) {
 
-        $('#info-box__summary').empty()
-        $('#info-box__categories').empty()
+        $('#info-box__summary').empty();
+        $('#info-box__categories').empty();
         width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
 
         if (width > 1024) {
-            $('#info-box').css('display', 'block')
+            $('#info-box').css('display', 'block');
         }
 
         if ($('#show-location-info').length === 0) {
-            $('.listingsToggle').append('<button id="show-location-info" type="button" class="waves-effect waves-light btn" onclick="controller.showLocationInfo()" >Location info</button>')
+            $('.listingsToggle').append('<button id="show-location-info" type="button" class="waves-effect waves-light btn" onclick="controller.showLocationInfo()" >Location info</button>');
         }
-        $('#info-box__summary').append(data.summary)
+        $('#info-box__summary').append(data.summary);
 
         for (entry in data.categories) {
-            percentage = data.categories[entry].score_out_of_10 * 10
-            name = data.categories[entry].name
-            $('#info-box__categories').append('<p>'+name+'</p><div class="progress"><div class="determinate" style="width:'+percentage+'"></div></div>')
+            percentage = data.categories[entry].score_out_of_10 * 10;
+            name = data.categories[entry].name;
+            $('#info-box__categories').append('<p>'+name+'</p><div class="progress"><div class="determinate" style="width:'+percentage+'"></div></div>');
         }
 
     },
     dePopulateInfoBox: function () {
-        $('#info-box__summary').empty()
-        $('#info-box__categories').empty()
-        $('#info-box__summary').append('<p>No information available for this location.</p>')
+        $('#info-box__summary').empty();
+        $('#info-box__categories').empty();
+        $('#info-box__summary').append('<p>No information available for this location.</p>');
 
     },
     removeInfoBox: function () {
-        $('#info-box').css('display', 'none')
+        $('#info-box').css('display', 'none');
     },
     // This function populates the infowindow when the marker is clicked. We'll only allow
     // one infowindow which will open at the marker that is clicked, and populate based
@@ -302,7 +302,7 @@ var controller = {
 
             if (width < 1024) {
                 if ($('#info-box').css("display") === 'block') {
-                    controller.showLocationInfo()
+                    controller.showLocationInfo();
                 }
             }
 
@@ -320,14 +320,14 @@ var controller = {
             width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
 
             if (width < 1024) {
-                controller.sidebarToggle()
+                controller.sidebarToggle();
             }
 
-            $('#info-box').css({ "display": "block" })
+            $('#info-box').css({ "display": "block" });
 
         } else {
 
-            $('#info-box').css({ "display": "none" })
+            $('#info-box').css({ "display": "none" });
 
         }
     },
@@ -346,7 +346,7 @@ var controller = {
 // sidebar, so it's usable even if the user is changing the width of the screen
 controller.setToggle();
 $(window).resize(function () {
-    controller.setToggle()
+    controller.setToggle();
 })
 
 
